@@ -67,6 +67,7 @@ define wordpress::plugin(
     $plugin_src_path = "${wordpress::params::src_path}/wordpress-plugin"
     $plugin_extract_path = "${path}/wp-content/plugins"
 
+
     if ! defined(File["${plugin_src_path}"]) {
       file {"${plugin_src_path}":
         ensure => 'directory',
@@ -92,7 +93,6 @@ define wordpress::plugin(
       creates => "${plugin_extract_path}/${rename_alias}",
       require => Exec["wordpress::plugin::download $title"]
     }
-
 }
 
 define wordpress::install(
@@ -124,7 +124,7 @@ define wordpress::install(
       command => "wget '${archive_url}' -O '${archive_tmp}' ||rm '${archive_tmp}' && false"
     }
 
-    file {"${wordpress_path}":
+    file {["${wordpress_path}","${wordpress_path}/wp-contents","${wordpress_path}/wp-contents/plugins"]:
        ensure => 'directory',
        owner => "root",
        group => "root",
