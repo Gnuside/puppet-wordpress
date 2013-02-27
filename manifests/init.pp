@@ -87,7 +87,8 @@ define wordpress::plugin(
     exec {"wordpress::plugin::download $title":
       unless => "test -f ${plugin_src_path}/${plugin_zip_basename}",
       cwd => "${plugin_src_path}",
-      command => "wget -q http://downloads.wordpress.org/plugin/${plugin_zip_basename}",
+      command => "wget -q http://downloads.wordpress.org/plugin/${plugin_zip_basename} || \
+                  (rm -f ${plugin_zip_basename} && false)",
       creates => "${plugin_src_path}/${plugin_zip_basename}"
     }
 
@@ -96,7 +97,9 @@ define wordpress::plugin(
       cwd     => "${plugin_extract_path}",
       command => "unzip ${plugin_src_path}/${plugin_zip_basename} -d .",
       creates => "${plugin_extract_path}/${rename_alias}",
-      require => Exec["wordpress::plugin::download $title"]
+      require => [Exec["wordpress::plugin::download $title"],
+                  Package["unzip"]
+                ]
     }
 
 }
@@ -127,7 +130,7 @@ define wordpress::install(
 
     exec { "wordpress-install-download-${version}":
       unless  => "test -f ${$archive_tmp}",
-      command => "wget '${archive_url}' -O '${archive_tmp}' ||rm '${archive_tmp}' && false"
+      command => "wget '${archive_url}' -O '${archive_tmp}' || (rm '${archive_tmp}' && false)"
     }
 
     file {"${wordpress_path}":
