@@ -78,6 +78,12 @@ define wordpress::plugin(
       }
     }
 
+    if ! defined(Package["unzip"]) {
+      package {"unzip":
+        ensure => installed
+      }
+    }
+
     exec {"wordpress::plugin::download $title":
       unless => "test -f ${plugin_src_path}/${plugin_zip_basename}",
       cwd => "${plugin_src_path}",
