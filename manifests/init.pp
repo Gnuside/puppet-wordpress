@@ -59,7 +59,7 @@ class wordpress::params {
     }
 
     $plugin_zip_basename = "$name.zip"
-    $plugin_src_path = "${wordpress::params::src_path}/wordpress-plugin"
+    $plugin_src_path = "${wordpress::params::src_path}/wordpress-plugins"
     $plugin_extract_path = "${path}/wp-content/plugins"
 
     if ! defined(File["${plugin_src_path}"]) {
@@ -82,7 +82,8 @@ class wordpress::params {
     exec {"wordpress::plugin::download $title":
       unless => "test -f ${plugin_src_path}/${plugin_zip_basename}",
       cwd => "${plugin_src_path}",
-      command => "wget -q http://downloads.wordpress.org/plugin/${plugin_zip_basename}",
+      command => "wget -q http://downloads.wordpress.org/plugin/${plugin_zip_basename} || \
+                  (rm -f ${plugin_zip_basename} && false)",
       creates => "${plugin_src_path}/${plugin_zip_basename}"
     }
 
@@ -91,7 +92,10 @@ class wordpress::params {
       cwd     => "${plugin_extract_path}",
       command => "unzip ${plugin_src_path}/${plugin_zip_basename} -d .",
       creates => "${plugin_extract_path}/${rename_alias}",
-      require => Exec["wordpress::plugin::download $title"]
+      require => [Exec["wordpress::plugin::download $title"],
+                  Package["unzip"],
+                  Anchor["wordpress::install::to ${path}"]
+                ]
     }
 
 }
@@ -120,9 +124,11 @@ define wordpress::install(
     $logged_in_salt = sha1("logged_in_salt$name")
     $nonce_salt = sha1("nonce_salt$name")
 
-    exec { "wordpress-install-download-${version}":
-      unless  => "test -f ${$archive_tmp}",
-      command => "wget '${archive_url}' -O '${archive_tmp}' ||rm '${archive_tmp}' && false"
+    exec { "wordpress::install::download ${version}":
+      require => File["${wordpress_path}"],
+      unless  => "test -f ${archive_tmp}",
+      command => "wget '${archive_url}' -O '${archive_tmp}' || \
+                  (rm '${archive_tmp}' && false)"
     }
 
     file {"${wordpress_path}":
@@ -141,8 +147,12 @@ define wordpress::install(
       cwd     => "/${src_path}",
       require => [
         File["${src_path}"],
-        Exec["wordpress-install-download-${version}"]
+        Exec["wordpress::install::download ${version}"]
       ]
+    }
+
+    anchor { "wordpress::install::to ${path}": 
+      require => Exec["wordpress-install-extract-${version}-to-${path}"]
     }
 
     #if ($version == 'latest') {
