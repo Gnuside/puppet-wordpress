@@ -11,7 +11,7 @@ define wordpress::plugin(
     }
 
     $plugin_zip_basename = "$name.zip"
-    $plugin_src_path = "${wordpress::params::src_path}/wordpress-plugin"
+    $plugin_src_path = "${wordpress::params::src_path}/wordpress-plugins"
     $plugin_extract_path = "${path}/wp-content/plugins"
 
 
@@ -35,7 +35,8 @@ define wordpress::plugin(
     exec {"wordpress::plugin::download $title":
       unless => "test -f ${plugin_src_path}/${plugin_zip_basename}",
       cwd => "${plugin_src_path}",
-      command => "wget -q http://downloads.wordpress.org/plugin/${plugin_zip_basename}",
+      command => "wget -q http://downloads.wordpress.org/plugin/${plugin_zip_basename} || \
+                  (rm -f ${plugin_zip_basename} && false)",
       creates => "${plugin_src_path}/${plugin_zip_basename}"
     }
 
@@ -45,6 +46,8 @@ define wordpress::plugin(
       command => "unzip ${plugin_src_path}/${plugin_zip_basename} -d .",
       creates => "${plugin_extract_path}/${rename_alias}",
       require => [Exec["wordpress::plugin::download $title"],
-                  Package["unzip"]]
+                  Package["unzip"],
+                  Anchor["wordpress::install::to ${path}"]
+                ]
     }
 }

@@ -23,9 +23,11 @@ define wordpress::install(
     $logged_in_salt = sha1("logged_in_salt$name")
     $nonce_salt = sha1("nonce_salt$name")
 
-    exec { "wordpress-install-download-${version}":
+    exec { "wordpress::install::download ${version}":
+      require => File["${wordpress_path}"],
       unless  => "test -f ${$archive_tmp}",
-      command => "wget '${archive_url}' -O '${archive_tmp}' ||rm '${archive_tmp}' && false",
+      command => "wget '${archive_url}' -O '${archive_tmp}' || \
+                  (rm '${archive_tmp}' && false)",
       user => "root",
       group => "root"
     }
@@ -38,7 +40,7 @@ define wordpress::install(
        mode => 755
     }
 
-    exec { "wordpress-install-extract-${version}-to-${path}":
+    exec { "wordpress::install::extract ${version} to ${path}":
       unless  => "test -d '${path}'",
       command => "tar xaf '${archive_tmp}' ; \
         mkdir -p `dirname '${path}'` ; \
@@ -46,32 +48,21 @@ define wordpress::install(
       cwd     => "/${src_path}",
       require => [
         File["${src_path}"],
-        Exec["wordpress-install-download-${version}"]
+        Exec["wordpress::install::download ${version}"]
       ]
     }
 
-    #if ($version == 'latest') {
-    #  exec { "wordpress-remove-download-${version}":
-    #    unless  => "test ! -f ${$archive_tmp}",
-    #    command => "rm -f '${archive_tmp}'",
-    #    require => Exec["wordpress-install-extract-${version}-to-${path}"]
-    #  }
-    #}
+    anchor { "wordpress::install::to ${path}": 
+      require => Exec["wordpress::install::extract ${version} to ${path}"]
+    }
 
     file { "${path}/wp-config.php":
         content => template("wordpress/wp-config.php.erb"),
         owner => "www-data",
         group => "www-data",
         mode => "0644",
-        require => Exec["wordpress-install-extract-${version}-to-${path}"]
+        require => Exec["wordpress::install::extract ${version} to ${path}"]
     }
 
-    #    file { "$path":
-    #	ensure    => "directory",
-    #	source   => "puppet://puppet.example.com/dist/apps/wordpress/wordpress",
-    #	recurse => "true",
-    #	force  => true,
-    #	mode  => "0644",
-    #    }
 }
 
