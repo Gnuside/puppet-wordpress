@@ -51,12 +51,8 @@ class wordpress::params {
   }
 }
 
-define wordpress::plugin(
-    $path,
-    $rename_as = undef
-) {
-    include wordpress::params
 
+<<<<<<< HEAD
     if $rename_as == undef {
       $rename_alias = $name
     } else {
@@ -178,4 +174,6 @@ define wordpress::install(
 class wordpress::service {
     include wordpress::params
 }
+=======
+>>>>>>> cea8fb5d8cd834c72d64d16092fab141475e1fa9
 
