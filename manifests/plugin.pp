@@ -18,10 +18,13 @@ define wordpress::plugin(
     if ! defined(File["${plugin_src_path}"]) {
       file {"${plugin_src_path}":
         ensure => 'directory',
-        owner => "root",
-        group => "root",
+        owner => "www-data",
+        group => "www-data",
+        #mode => "0644",
+        #owner => "root",
+        #group => "root",
         recurse => true,
-        mode => 755,
+        #mode => 755,
         require => File["$wordpress::params::src_path"]
       }
     }
@@ -41,6 +44,8 @@ define wordpress::plugin(
     }
 
     exec {"wordpress::plugin::extract $rename_alias":
+      user => "www-data",
+      group => "www-data",
       unless  => "test -d ${plugin_extract_path}/${rename_alias}",
       cwd     => "${plugin_extract_path}",
       command => "unzip ${plugin_src_path}/${plugin_zip_basename} -d .",

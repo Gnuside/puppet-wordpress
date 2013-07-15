@@ -34,10 +34,12 @@ define wordpress::install(
 
     file {["${wordpress_path}","${wordpress_path}/wp-contents","${wordpress_path}/wp-contents/plugins"]:
        ensure => 'directory',
-       owner => "root",
-       group => "root",
+       owner => "www-data",
+       group => "www-data",
+       #owner => "root",
+       #group => "root",
        recurse => true,
-       mode => 755
+       mode => 644
     }
 
     exec { "wordpress::install::extract ${version} to ${path}":
@@ -53,7 +55,12 @@ define wordpress::install(
     }
 
     anchor { "wordpress::install::to ${path}": 
-      require => Exec["wordpress::install::extract ${version} to ${path}"]
+      require => [
+        Exec["wordpress::install::extract ${version} to ${path}"],
+        File["${wordpress_path}"],
+        File["${wordpress_path}/wp-contents"],
+        File["${wordpress_path}/wp-contents/plugins"]
+      ]
     }
 
     file { "${path}/wp-config.php":
