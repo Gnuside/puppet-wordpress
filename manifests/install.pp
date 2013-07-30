@@ -32,7 +32,7 @@ define wordpress::install(
       group => "root"
     }
 
-    file {["${wordpress_path}","${wordpress_path}/wp-contents","${wordpress_path}/wp-contents/plugins"]:
+    file {["${wordpress_path}","${wordpress_path}/wp-content","${wordpress_path}/wp-content/plugins"]:
        ensure => 'directory',
        owner => "www-data",
        group => "www-data",
@@ -58,8 +58,8 @@ define wordpress::install(
       require => [
         Exec["wordpress::install::extract ${version} to ${path}"],
         File["${wordpress_path}"],
-        File["${wordpress_path}/wp-contents"],
-        File["${wordpress_path}/wp-contents/plugins"]
+        File["${wordpress_path}/wp-content"],
+        File["${wordpress_path}/wp-content/plugins"]
       ]
     }
 
