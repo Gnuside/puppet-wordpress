@@ -45,9 +45,9 @@ define wordpress::install(
       command => "tar xaf '${archive_tmp}' ; \
         mkdir -p `dirname '${path}'` ; \
         mv wordpress '${path}'",
-      cwd     => "/${src_path}",
+      cwd     => "/${wordpress::params::src_path}",
       require => [
-        File["${src_path}"],
+        File["${wordpress::params::src_path}"],
         Exec["wordpress::install::download ${version}"]
       ]
     }
