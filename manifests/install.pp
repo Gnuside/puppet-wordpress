@@ -27,7 +27,7 @@ define wordpress::install(
       require => File["${wordpress_path}"],
       unless  => "test -f ${$archive_tmp}",
       command => "wget '${archive_url}' -O '${archive_tmp}' || \
-                  (rm '${archive_tmp}' && false)",
+                  (rm -f '${archive_tmp}' && false)",
       user => "root",
       group => "root"
     }
