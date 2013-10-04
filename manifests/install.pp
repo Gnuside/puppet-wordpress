@@ -11,8 +11,8 @@ define wordpress::install(
 
     $archive_name = "wordpress-${version}.tar.gz"
     $archive_url = "http://wordpress.org/${archive_name}"
-    $wordpress_path = "${wordpress::params::src_path}/wordpress"
-    $archive_tmp = "${wordpress_path}/${archive_name}"
+    $archive_dir = "${wordpress::params::src_path}/wordpress"
+    $archive_tmp = "${archive_dir}/${archive_name}"
 
     $auth_key = sha1("auth_key$name")
     $secure_auth_key = sha1("secure_auth_key$name")
@@ -24,15 +24,15 @@ define wordpress::install(
     $nonce_salt = sha1("nonce_salt$name")
 
     exec { "wordpress::install::download ${version}":
-      require => File["${wordpress_path}"],
+      require => File["${archive_dir}"],
       unless  => "test -f ${$archive_tmp}",
       command => "wget '${archive_url}' -O '${archive_tmp}' || \
-                  (rm '${archive_tmp}' && false)",
+                  (rm -f '${archive_tmp}' && false)",
       user => "root",
       group => "root"
     }
 
-    file {["${wordpress_path}","${wordpress_path}/wp-content","${wordpress_path}/wp-content/plugins"]:
+    file {["${archive_dir}","${path}/wp-content","${path}/wp-content/plugins","${path}/wp-content/themes"]:
        ensure => 'directory',
        owner => "www-data",
        group => "www-data",
@@ -43,23 +43,25 @@ define wordpress::install(
     }
 
     exec { "wordpress::install::extract ${version} to ${path}":
-      unless  => "test -d '${path}'",
-      command => "tar xaf '${archive_tmp}' ; \
-        mkdir -p `dirname '${path}'` ; \
-        mv wordpress '${path}'",
-      cwd     => "/${wordpress::params::src_path}",
+      unless  => "test -d '${path}/wp-admin' && test -f '${path}/.gnuside-wordpress-extracted'",
+      command => "tar xaf '${archive_tmp}' && \
+                  cp -fr ${archive_dir}/wordpress/* ${path} && \
+                  rm -fr ${archive_dir}/wordpress && \
+                  touch ${path}/.gnuside-wordpress-extracted",
+      cwd     => "${archive_dir}",
       require => [
         File["${wordpress::params::src_path}"],
-        Exec["wordpress::install::download ${version}"]
+        Exec["wordpress::install::download ${version}"],
+        File["${path}/wp-content"] # ensure that $path exists
       ]
     }
 
     anchor { "wordpress::install::to ${path}": 
       require => [
         Exec["wordpress::install::extract ${version} to ${path}"],
-        File["${wordpress_path}"],
-        File["${wordpress_path}/wp-content"],
-        File["${wordpress_path}/wp-content/plugins"]
+        File["${archive_dir}"],
+        File["${path}/wp-content"],
+        File["${path}/wp-content/plugins"]
       ]
     }
 
