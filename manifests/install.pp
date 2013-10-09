@@ -32,6 +32,16 @@ define wordpress::install(
       group => "root"
     }
 
+    file { "${path}":
+      ensure => 'directory',
+      owner => "www-data",
+      group => "www-data",
+      #owner => "root",
+      #group => "root",
+      recurse => true,
+      mode => 644
+    }
+
     file {["${archive_dir}","${path}/wp-content","${path}/wp-content/plugins","${path}/wp-content/themes"]:
        ensure => 'directory',
        owner => "www-data",
@@ -39,7 +49,8 @@ define wordpress::install(
        #owner => "root",
        #group => "root",
        recurse => true,
-       mode => 644
+       mode => 644,
+       require => File["${path}"]
     }
 
     exec { "wordpress::install::extract ${version} to ${path}":
