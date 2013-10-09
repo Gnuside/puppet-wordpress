@@ -10,51 +10,53 @@ define wordpress::install(
     include wordpress::params
 
     $archive_name = "wordpress-${version}.tar.gz"
-    $archive_url = "http://wordpress.org/${archive_name}"
-    $archive_dir = "${wordpress::params::src_path}/wordpress"
-    $archive_tmp = "${archive_dir}/${archive_name}"
+    $archive_url  = "http://wordpress.org/${archive_name}"
+    $archive_dir  = "${wordpress::params::src_path}/wordpress"
+    $archive_tmp  = "${archive_dir}/${archive_name}"
 
-    $auth_key = sha1("auth_key$name")
-    $secure_auth_key = sha1("secure_auth_key$name")
-    $logged_in_key = sha1("logged_in_key$name")
-    $nonce_key = sha1("nonce_key$name")
-    $auth_salt = sha1("auth_salt$name")
+    $auth_key         = sha1("auth_key$name")
+    $secure_auth_key  = sha1("secure_auth_key$name")
+    $logged_in_key    = sha1("logged_in_key$name")
+    $nonce_key        = sha1("nonce_key$name")
+    $auth_salt        = sha1("auth_salt$name")
     $secure_auth_salt = sha1("secure_auth_salt$name")
-    $logged_in_salt = sha1("logged_in_salt$name")
-    $nonce_salt = sha1("nonce_salt$name")
+    $logged_in_salt   = sha1("logged_in_salt$name")
+    $nonce_salt       = sha1("nonce_salt$name")
 
     exec { "wordpress::install::download ${version}":
       require => File["${archive_dir}"],
-      unless  => "test -f ${$archive_tmp}",
+      unless  => "test -f ${$archive_tmp} || \
+                  test -f '${path}/.gnuside-wordpress-extracted'",
       command => "wget '${archive_url}' -O '${archive_tmp}' || \
                   (rm -f '${archive_tmp}' && false)",
-      user => "root",
-      group => "root"
+      user    => "root",
+      group   => "root"
     }
 
     file { "${path}":
-      ensure => 'directory',
-      owner => "www-data",
-      group => "www-data",
-      #owner => "root",
-      #group => "root",
+      ensure  => 'directory',
+      owner   => "www-data",
+      group   => "www-data",
+      #owner   => "root",
+      #group   => "root",
       recurse => true,
-      mode => 644
+      mode    => 644
     }
 
     file {["${archive_dir}","${path}/wp-content","${path}/wp-content/plugins","${path}/wp-content/themes"]:
-       ensure => 'directory',
-       owner => "www-data",
-       group => "www-data",
-       #owner => "root",
-       #group => "root",
-       recurse => true,
-       mode => 644,
-       require => File["${path}"]
+      ensure  => 'directory',
+      owner   => "www-data",
+      group   => "www-data",
+      #owner   => "root",
+      #group   => "root",
+      recurse => true,
+      mode    => 644,
+      require => File["${path}"]
     }
 
     exec { "wordpress::install::extract ${version} to ${path}":
-      unless  => "test -d '${path}/wp-admin' && test -f '${path}/.gnuside-wordpress-extracted'",
+      unless  => "test -d '${path}/wp-admin' && \
+                  test -f '${path}/.gnuside-wordpress-extracted'",
       command => "tar xaf '${archive_tmp}' && \
                   cp -fr ${archive_dir}/wordpress/* ${path} && \
                   rm -fr ${archive_dir}/wordpress && \
@@ -76,13 +78,19 @@ define wordpress::install(
       ]
     }
 
-    file { "${path}/wp-config.php":
-        content => template("wordpress/wp-config.php.erb"),
-        owner => "www-data",
-        group => "www-data",
-        mode => "0644",
-        require => Exec["wordpress::install::extract ${version} to ${path}"]
+    file { "${path}/wp-config-development.php":
+      content => template("wordpress/wp-config.php.erb"),
+      owner   => "www-data",
+      group   => "www-data",
+      mode    => "0644",
+      require => Exec["wordpress::install::extract ${version} to ${path}"]
     }
 
+    exec { "wordpress::install::copy_wonfig":
+      unless  => "test -f ${path}/wp-config.php",
+      command => "cp ${path}/wp-config-development.php ${path}/wp-config.php",
+      cwd     => "${path}",
+      require => File["${path}/wp-config-development.php"]
+    }
 }
 
