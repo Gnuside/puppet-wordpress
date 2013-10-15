@@ -13,7 +13,7 @@ define('AUTH_SALT',        '<%= @auth_salt %>');
 define('SECURE_AUTH_SALT', '<%= @secure_auth_salt %>');
 define('LOGGED_IN_SALT',   '<%= @logged_in_salt %>');
 define('NONCE_SALT',       '<%= @nonce_salt %>');
-$table_prefix  = 'wp_';
+$table_prefix  = '<%= @table_prefix %>';
 define ('WPLANG', '');
 define('WP_DEBUG', false);
 define('WP_CACHE', true);
