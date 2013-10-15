@@ -5,7 +5,8 @@ define wordpress::install(
     $database, 
     $database_username, 
     $database_password,
-    $version = 'latest'
+    $version = 'latest',
+    $table_prefix = 'wp_'
 ) {
     include wordpress::params
 
