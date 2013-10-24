@@ -24,7 +24,7 @@ define wordpress::install(
     $logged_in_salt   = sha1("logged_in_salt$name")
     $nonce_salt       = sha1("nonce_salt$name")
 
-    exec { "wordpress::install::download ${version}":
+    exec { "wordpress::install::download ${version} for ${path}":
       require => File["${archive_dir}"],
       unless  => "test -f ${$archive_tmp} || \
                   test -f '${path}/.gnuside-wordpress-extracted'",
@@ -38,18 +38,24 @@ define wordpress::install(
       ensure  => 'directory',
       owner   => "www-data",
       group   => "www-data",
-      #owner   => "root",
-      #group   => "root",
       recurse => true,
       mode    => 644
     }
 
-    file {["${archive_dir}","${path}/wp-content","${path}/wp-content/plugins","${path}/wp-content/themes"]:
+    if ! defined(File["${archive_dir}"]) {
+      file { "${archive_dir}":
+        ensure  => 'directory',
+        owner   => "www-data",
+        group   => "www-data",
+        recurse => true,
+        mode    => 644,
+      }
+    }
+
+    file {["${path}/wp-content","${path}/wp-content/plugins"]:
       ensure  => 'directory',
       owner   => "www-data",
       group   => "www-data",
-      #owner   => "root",
-      #group   => "root",
       recurse => true,
       mode    => 644,
       require => File["${path}"]
@@ -65,7 +71,7 @@ define wordpress::install(
       cwd     => "${archive_dir}",
       require => [
         File["${wordpress::params::src_path}"],
-        Exec["wordpress::install::download ${version}"],
+        Exec["wordpress::install::download ${version} for ${path}"],
         File["${path}/wp-content"] # ensure that $path exists
       ]
     }
@@ -87,7 +93,7 @@ define wordpress::install(
       require => Exec["wordpress::install::extract ${version} to ${path}"]
     }
 
-    exec { "wordpress::install::copy_wonfig":
+    exec { "wordpress::install::copy_config in ${path}":
       unless  => "test -f ${path}/wp-config.php",
       command => "cp ${path}/wp-config-development.php ${path}/wp-config.php",
       cwd     => "${path}",
