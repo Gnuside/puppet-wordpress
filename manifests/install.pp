@@ -5,6 +5,7 @@ define wordpress::install(
     $database, 
     $database_username, 
     $database_password,
+    $database_hostname = '127.0.0.1',
     $version = 'latest',
     $table_prefix = 'wp_'
 ) {
