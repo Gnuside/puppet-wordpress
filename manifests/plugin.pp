@@ -1,7 +1,7 @@
 define wordpress::plugin(
     $path,
-    $rename_as = undef
-    $version = undef,
+    $rename_as = undef,
+    $version = undef
 ) {
     include wordpress::params
 
