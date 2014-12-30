@@ -28,7 +28,7 @@ define wordpress::install(
     exec { "wordpress::install::download ${version} for ${path}":
       require => File["${archive_dir}"],
       unless  => "test -f ${$archive_tmp} || \
-                  test -f '${path}/.gnuside-wordpress-extracted'",
+                  test -f '${path}/wp-config.php'",
       command => "wget '${archive_url}' -O '${archive_tmp}' || \
                   (rm -f '${archive_tmp}' && false)",
       user    => "root",
@@ -63,12 +63,11 @@ define wordpress::install(
     }
 
     exec { "wordpress::install::extract ${version} to ${path}":
-      unless  => "test -d '${path}/wp-admin' && \
-                  test -f '${path}/.gnuside-wordpress-extracted'",
+      unless  => "test -d '${path}/wp-admin' || \
+                  test -f '${path}/wp-config.php'",
       command => "tar xaf '${archive_tmp}' && \
                   cp -fr ${archive_dir}/wordpress/* ${path} && \
-                  rm -fr ${archive_dir}/wordpress && \
-                  touch ${path}/.gnuside-wordpress-extracted",
+                  rm -fr ${archive_dir}/wordpress",
       cwd     => "${archive_dir}",
       require => [
         File["${wordpress::params::src_path}"],
