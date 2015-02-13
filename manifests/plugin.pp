@@ -1,8 +1,11 @@
 define wordpress::plugin(
     $path,
-    $rename_as = undef
+    $rename_as = undef,
+    $version = undef
 ) {
     include wordpress::params
+
+    $plugin_name = $name
 
     if $rename_as == undef {
       $rename_alias = $name
@@ -10,7 +13,13 @@ define wordpress::plugin(
       $rename_alias = $rename_as
     }
 
-    $plugin_zip_basename = "$name.zip"
+    if $version == undef {
+      $version_string = ""
+    } else {
+      $version_string = ".$version"
+    }
+
+    $plugin_zip_basename = "${plugin_name}${version_string}.zip"
     $plugin_src_path = "${wordpress::params::src_path}/wordpress-plugins"
     $plugin_extract_path = "${path}/wp-content/plugins"
 
@@ -36,6 +45,8 @@ define wordpress::plugin(
     }
 
     exec {"wordpress::plugin::download $title":
+      user => "www-data",
+      group => "www-data",
       unless => "test -f ${plugin_src_path}/${plugin_zip_basename}",
       cwd => "${plugin_src_path}",
       command => "wget -q http://downloads.wordpress.org/plugin/${plugin_zip_basename} || \
