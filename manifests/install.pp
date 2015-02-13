@@ -31,8 +31,8 @@ define wordpress::install(
                   test -f '${path}/wp-config.php'",
       command => "wget '${archive_url}' -O '${archive_tmp}' || \
                   (rm -f '${archive_tmp}' && false)",
-      user    => "root",
-      group   => "root"
+      user    => "www-data",
+      group   => "www-data"
     }
 
     file { "${path}":
@@ -65,10 +65,11 @@ define wordpress::install(
     exec { "wordpress::install::extract ${version} to ${path}":
       unless  => "test -d '${path}/wp-admin' || \
                   test -f '${path}/wp-config.php'",
+      user    => "www-data",
+      group   => "www-data",
       command => "tar xaf '${archive_tmp}' && \
                   cp -fr ${archive_dir}/wordpress/* ${path} && \
-                  rm -fr ${archive_dir}/wordpress && \
-                  chown -R www-data:www-data ${path}",
+                  rm -fr ${archive_dir}/wordpress",
       cwd     => "${archive_dir}",
       require => [
         File["${wordpress::params::src_path}"],
@@ -96,6 +97,8 @@ define wordpress::install(
 
     exec { "wordpress::install::copy_config in ${path}":
       unless  => "test -f ${path}/wp-config.php",
+      user    => "www-data",
+      group   => "www-data",
       command => "cp ${path}/wp-config-development.php ${path}/wp-config.php",
       cwd     => "${path}",
       require => File["${path}/wp-config-development.php"]

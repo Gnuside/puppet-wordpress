@@ -45,6 +45,8 @@ define wordpress::plugin(
     }
 
     exec {"wordpress::plugin::download $title":
+      user => "www-data",
+      group => "www-data",
       unless => "test -f ${plugin_src_path}/${plugin_zip_basename}",
       cwd => "${plugin_src_path}",
       command => "wget -q http://downloads.wordpress.org/plugin/${plugin_zip_basename} || \
