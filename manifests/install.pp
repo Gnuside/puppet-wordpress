@@ -67,7 +67,8 @@ define wordpress::install(
                   test -f '${path}/wp-config.php'",
       command => "tar xaf '${archive_tmp}' && \
                   cp -fr ${archive_dir}/wordpress/* ${path} && \
-                  rm -fr ${archive_dir}/wordpress",
+                  rm -fr ${archive_dir}/wordpress && \
+                  chown -R www-data:www-data ${path}",
       cwd     => "${archive_dir}",
       require => [
         File["${wordpress::params::src_path}"],
